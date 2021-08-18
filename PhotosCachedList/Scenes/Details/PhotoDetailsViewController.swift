@@ -27,12 +27,7 @@ class PhotoDetailsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let url = URL(string: photoModel.downloadUrl) {
-            photoImageView.sd_setImage(with: url) {[weak self] (image, _, _, _) in
-                guard let self = self else { return }
-                self.view.backgroundColor = image?.averageColor ?? UIColor.white
-            }
-        }
+        setupView()
     }
     
     deinit {
@@ -40,6 +35,14 @@ class PhotoDetailsViewController: UIViewController {
     }
 
     // MARK: - Functions
+    func setupView() {
+        if let url = URL(string: photoModel.downloadUrl) {
+            photoImageView.sd_setImage(with: url) {[weak self] (image, _, _, _) in
+                guard let self = self else { return }
+                self.view.backgroundColor = image?.averageColor ?? UIColor.white
+            }
+        }
+    }
     
     // MARK: - Actions
 

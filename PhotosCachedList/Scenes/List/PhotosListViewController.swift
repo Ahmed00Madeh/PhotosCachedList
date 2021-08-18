@@ -13,26 +13,50 @@ class PhotosListViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     
     // MARK: - Variables
+    let dataSource: DataSource
     var model = PagedModel<PhotoModel>()
     
     // MARK: - Life Cycle
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        tableView.registerCell(ofType: PhotoTableViewCell.self)
-        getPhotosData()
+    init(dataSource: DataSource) {
+        self.dataSource = dataSource
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     deinit {
         print(String(describing: type(of: self)) + "  Deinit")
     }
     
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupView()
+    }
+    
     // MARK: - Functions
+    func setupView() {
+        tableView.registerCell(ofType: PhotoTableViewCell.self)
+        getPhotosData()
+    }
+    
     func getPhotosData() {
-        API.getPhotosList(page: model.nextPage).done {[weak self] response in
+        dataSource.loadData().done { [weak self] response in
             guard let self = self else { return }
             self.model.append(items: response)
+            CacheManager.cache(response)
             self.tableView.reloadData()
         }.catch { error in }.finally { }
+    }
+    
+    func getMorePhotoData() {
+        dataSource.loadMoreData(page: model.nextPage)?.done({[weak self] response in
+            guard let self = self else { return }
+            self.model.append(items: response)
+            CacheManager.cache(response)
+            self.tableView.reloadData()
+        }).catch { error in }.finally { }
     }
     
     // MARK: - Actions
@@ -50,8 +74,8 @@ extension PhotosListViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = model.items[indexPath.section][indexPath.row]
         let cell: PhotoTableViewCell = tableView.dequeueReusableCell()!
+        let item = model.items[indexPath.section][indexPath.row]
         cell.populate(item)
         return cell
     }
@@ -73,10 +97,10 @@ extension PhotosListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         navigationController?.pushViewController(PhotoDetailsViewController(photoModel: model.items[indexPath.section][indexPath.row]), animated: true)
     }
-        
+    
     func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
         if model.hasNextPage && section + 1 == model.items.count {
-            getPhotosData()
+            getMorePhotoData()
         }
     }
     
