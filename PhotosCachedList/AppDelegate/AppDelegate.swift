@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Alamofire
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -19,7 +20,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func setRoot() {
         window = .init()
-        window?.rootViewController = UINavigationController(rootViewController: PhotosListViewController())
+        let reachabilityManager = Alamofire.NetworkReachabilityManager(host: "www.apple.com")
+        let isReachable = reachabilityManager?.isReachable ?? false
+        
+        window?.rootViewController = UINavigationController(rootViewController: PhotosListViewController(dataSource: isReachable ? OnlineDataLoader() : OfflineDataLoader()))
+        
         window?.makeKeyAndVisible()
     }
 
